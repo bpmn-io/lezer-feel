@@ -3,7 +3,7 @@ import {
   trackVariables,
   normalizeContextKey,
   VariableContext
-} from 'lezer-feel';
+} from '@bpmn-io/lezer-feel';
 
 import {
   expect

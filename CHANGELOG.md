@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to [lezer-feel](https://github.com/nikku/lezer-feel) are documented here. We use [semantic versioning](http://semver.org/) for releases.
+All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-feel) are documented here. We use [semantic versioning](http://semver.org/) for releases.
 
 ## Unreleased
 
