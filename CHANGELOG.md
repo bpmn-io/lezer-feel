@@ -1,10 +1,24 @@
 # Changelog
 
+
 All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-feel) are documented here. We use [semantic versioning](http://semver.org/) for releases.
+
+**Note:** Versions prior to 1.9.0 were released in [nikku/lezer-feel](https://github.com/nikku/lezer-feel)
 
 ## Unreleased
 
 ___Note:__ Yet to be released changes appear here._
+
+## 1.9.0
+
+_Initial release of the fork as `@bpmn-io/lezer-feel`_
+
+* `FEAT`: support multi-line strings in `camunda` dialect ([#1](https://github.com/bpmn-io/lezer-feel/pull/1))
+* `FIX`: allow line breaks in backtick identifiers ([#1](https://github.com/bpmn-io/lezer-feel/pull/1))
+
+---
+
+**Note:** Versions prior to 1.9.0 were released in [nikku/lezer-feel](https://github.com/nikku/lezer-feel)
 
 ## 1.8.1
 
