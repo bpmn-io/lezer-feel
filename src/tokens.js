@@ -263,7 +263,8 @@ function parseSpaces(input, offset) {
  * @return { { token: string, offset: number, term: number } | null }
  */
 function parseName(input, variables) {
-  const contextKeys = variables.contextKeys();
+  const cache = variables.contextCache();
+  const { keys, prefixes } = cache;
 
   const start = variables.tokens;
 
@@ -298,7 +299,7 @@ function parseName(input, variables) {
 
     const name = [ ...start, ...tokens ].join(' ');
 
-    if (contextKeys.some(el => el === name)) {
+    if (keys.has(name)) {
       const token = tokens[0];
 
       nextMatch = {
@@ -308,7 +309,7 @@ function parseName(input, variables) {
       };
     }
 
-    if (contextKeys.some(el => el.startsWith(name))) {
+    if (prefixes.has(name)) {
       continue;
     }
 
@@ -476,6 +477,85 @@ const dateTimeLiterals = {
 
 const dateTimeIdentifiers = Object.keys(dateTimeLiterals);
 
+/**
+ * @typedef { {
+ *   keys: Set<string>,
+ *   prefixes: Set<string>,
+ *   originalMap: Map<string, string>
+ * } } ContextCache
+ *
+ * @typedef { WeakMap<VariableContext, ContextCache> } CacheMap
+ */
+
+/**
+ * Get all prefixes for a given string.
+ * Used to build a prefix set for fast startsWith() checks.
+ *
+ * @param {string} str
+ * @returns {string[]}
+ */
+function getPrefixes(str) {
+  const prefixes = [];
+  for (let i = 1; i <= str.length; i++) {
+    prefixes.push(str.substring(0, i));
+  }
+  return prefixes;
+}
+
+/**
+ * @param {string} key
+ * @param {ContextCache} cache
+ *
+ * @return {ContextCache} cache
+ */
+function cacheKey(key, cache) {
+  const normalizedKey = normalizeContextKey(key);
+  const prefixes = getPrefixes(normalizedKey);
+
+  cache.keys.add(normalizedKey);
+
+  for (const prefix of prefixes) {
+    cache.prefixes.add(prefix);
+  }
+
+  cache.originalMap.set(normalizedKey, key);
+
+  return cache;
+}
+
+/**
+ * Compute the normalized keys cache for a context.
+ *
+ * @param {VariableContext} context
+ *
+ * @returns {ContextCache}
+ */
+function computeContextCache(context) {
+
+  const cache = createContextCache();
+
+  for (const key of context.getKeys()) {
+    cacheKey(key, cache);
+  }
+
+  return cache;
+}
+
+
+/**
+ * Copy an existing context cache
+ *
+ * @param {ContextCache} [from]
+ *
+ * @returns {ContextCache}
+ */
+function createContextCache(from) {
+  return {
+    keys: new Set(from?.keys),
+    prefixes: new Set(from?.prefixes),
+    originalMap: new Map(from?.originalMap)
+  };
+}
 
 /**
  * A basic key-value store to hold context values.
@@ -498,7 +578,7 @@ export class VariableContext {
   /**
    * Return all defined keys of the context.
    *
-   * @returns {Array<string>} the keys of the context
+   * @returns {string[] } the keys of the context
    */
   getKeys() {
     return Object.keys(this.value);
@@ -528,7 +608,7 @@ export class VariableContext {
   /**
    * Creates a new context with the given key added.
    *
-   * @param {String} key
+   * @param {string} key
    * @param {any} value
    *
    * @returns {VariableContext} new context with the given key added
@@ -537,7 +617,7 @@ export class VariableContext {
 
     const constructor = /** @type { typeof VariableContext } */ (this.constructor);
 
-    return constructor.of({
+    return new constructor({
       ...this.value,
       [key]: value
     });
@@ -657,7 +737,8 @@ class Variables {
    *   parent: Variables | null
    *   context: VariableContext,
    *   value?: any,
-   *   raw?: any
+   *   raw?: any,
+   *   __cache?: CacheMap
    * } } options
    */
   constructor({
@@ -667,7 +748,8 @@ class Variables {
     parent = null,
     context,
     value,
-    raw
+    raw,
+    __cache
   }) {
     this.name = name;
     this.tokens = tokens;
@@ -676,6 +758,36 @@ class Variables {
     this.context = context;
     this.value = value;
     this.raw = raw;
+    this.__cache = __cache;
+  }
+
+  /**
+   * Get the root Variables instance by traversing up the parent chain.
+   *
+   * @returns {Variables}
+   */
+  get root() {
+    let current = /** @type {Variables} */ (this);
+    while (current.parent) {
+      current = current.parent;
+    }
+    return current;
+  }
+
+  /**
+   * Get the root Variables instance by traversing up the parent chain.
+   *
+   * @returns {CacheMap}
+   */
+  get cache() {
+
+    const root = this.root;
+
+    if (!root.__cache) {
+      root.__cache = new WeakMap();
+    }
+
+    return root.__cache;
   }
 
   enterScope(name) {
@@ -740,8 +852,22 @@ class Variables {
     }
   }
 
-  contextKeys() {
-    return this.context.getKeys().map(normalizeContextKey);
+  /**
+   * Get or compute the context cache for fast retrival
+   * of keys, prefixes and original mappings.
+   *
+   * @returns {ContextCache}
+   */
+  contextCache() {
+
+    let cache = this.cache.get(this.context);
+    if (!cache) {
+      cache = computeContextCache(this.context);
+
+      this.cache.set(this.context, cache);
+    }
+
+    return cache;
   }
 
   get path() {
@@ -755,12 +881,9 @@ class Variables {
    * @return { any } value
    */
   get(variable) {
+    const normalizedVariable = variable && normalizeContextKey(variable);
 
-    const names = [ variable, variable && normalizeContextKey(variable) ];
-
-    const contextKey = this.context.getKeys().find(
-      key => names.includes(normalizeContextKey(key))
-    );
+    const contextKey = this.contextCache().originalMap.get(normalizedVariable);
 
     if (typeof contextKey === 'undefined') {
       return undefined;
@@ -855,10 +978,19 @@ class Variables {
 
     LOG_VARS && console.log('[%s] define <%s=%s>', this.path, name, value);
 
-    const context = this.context.set(name, value);
+    const oldContext = this.context;
+    const newContext = oldContext.set(name, value);
+
+    const oldCache = this.cache.get(oldContext) || computeContextCache(oldContext);
+    const newCache = cacheKey(
+      name,
+      createContextCache(oldCache)
+    );
+
+    this.cache.set(newContext, newCache);
 
     return this.assign({
-      context
+      context: newContext
     });
   }
 
@@ -901,7 +1033,8 @@ class Variables {
    *   parent?: Variables | null
    *   context: VariableContext,
    *   value?: any,
-   *   raw?: any
+   *   raw?: any,
+   *   __cache?: CacheMap
    * } } options
    *
    * @return {Variables}
@@ -915,7 +1048,8 @@ class Variables {
       parent = null,
       context,
       value,
-      raw
+      raw,
+      __cache
     } = options;
 
     if (!context) {
@@ -929,7 +1063,8 @@ class Variables {
       context,
       parent,
       value,
-      raw
+      raw,
+      __cache
     });
   }
 
@@ -947,7 +1082,7 @@ export function normalizeContextKey(name) {
   }
 
   return name.replace(/\s*([./\-'+]|\*\*?)\s*/g, ' $1 ').replace(/\s{2,}/g, ' ').trim();
-}
+};
 
 /**
  * Wrap children of variables under the given named child.
