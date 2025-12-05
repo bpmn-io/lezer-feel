@@ -8,6 +8,8 @@ All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-fe
 
 ___Note:__ Yet to be released changes appear here._
 
+## 2.0.0
+
 _Incorporate changes from `lezer-feel@2.1.0`._
 
 * `FEAT`: make pure ES module ([nikku/lezer-feel#66](https://github.com/nikku/lezer-feel/pull/66))
