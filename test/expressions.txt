@@ -629,6 +629,42 @@ Expression(
 )
 
 
+# Context (special, overridding key recognized)
+
+{
+  foo+bar: {
+    b-10: 2
+  },
+  foo+  bar: {
+    a-10: 2
+  }
+}.foo + bar.a-10
+
+==>
+
+Expression(
+  PathExpression(...)
+)
+
+
+# Context (special, overridden not recognized)
+
+{
+  foo+bar: {
+    b-10: 2
+  },
+  foo+  bar: {
+    a-10: 2
+  }
+}.foo + bar.b-10
+
+==>
+
+Expression(
+  ArithmeticExpression(...)
+)
+
+
 # Context (special, scope)  { "context": { "foo + bar": 100 } }
 
 {
@@ -842,6 +878,35 @@ Expressions(
   List(...)
 )
 
+
+# List (union type, special A)
+
+[ { a+: 1 }, { b+: 1 }, 1, null ].a+
+
+
+==>
+
+Expression(
+  PathExpression(
+    List(...),
+    VariableName(...)
+  )
+)
+
+
+# List (union type, special B)
+
+[ { a+: 1 }, { b+: 1 }, 1, null ].b+
+
+
+==>
+
+Expression(
+  PathExpression(
+    List(...),
+    VariableName(...)
+  )
+)
 
 # Interval / List (error) { "top": "Expressions" }
 
@@ -1587,7 +1652,7 @@ Expression(
 )
 
 
-# IfExpression (special)
+# IfExpression (special, then)
 
 (if foo then { a+: 1 } else { b-: 1 }).a+
 
@@ -1595,17 +1660,21 @@ Expression(
 
 Expression(
   PathExpression(
-    ParenthesizedExpression("(",
-      IfExpression(
-        if,VariableName(...),
-        then,Context("{",
-          ContextEntry(Key(Name(...)),NumericLiteral),
-        "}"),
-        else,Context("{",
-          ContextEntry(Key(Name(...)),NumericLiteral),
-        "}")
-      ),
-    ")"),
+    ParenthesizedExpression(...),
+    VariableName(...)
+  )
+)
+
+
+# IfExpression (special, else)
+
+(if foo then { a+: 1 } else { b-: 1 }).b-
+
+==>
+
+Expression(
+  PathExpression(
+    ParenthesizedExpression(...),
     VariableName(...)
   )
 )
@@ -1620,16 +1689,7 @@ Expression(
 Expression(
   PathExpression(
     PathExpression(
-      ParenthesizedExpression("(",
-        IfExpression(
-          if,
-            BooleanLiteral,
-          then,
-            Context(...),
-          else,
-            Context(...)
-        ),
-      ")"),
+      ParenthesizedExpression(...),
       VariableName(...)
     ),
     VariableName(...)

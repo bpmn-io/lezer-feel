@@ -1,6 +1,5 @@
 # Changelog
 
-
 All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-feel) are documented here. We use [semantic versioning](http://semver.org/) for releases.
 
 **Note:** Versions prior to 1.9.0 were released in [nikku/lezer-feel](https://github.com/nikku/lezer-feel)
@@ -8,6 +7,18 @@ All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-fe
 ## Unreleased
 
 ___Note:__ Yet to be released changes appear here._
+
+_Incorporate changes from `lezer-feel@2.1.0`._
+
+* `FEAT`: make pure ES module ([nikku/lezer-feel#66](https://github.com/nikku/lezer-feel/pull/66))
+* `CHORE`: improve performance with large contexts ([nikku/lezer-feel#73](https://github.com/nikku/lezer-feel/pull/73), [nikku/lezer-feel#70](https://github.com/nikku/lezer-feel/pull/70), [nikku/lezer-feel#59](https://github.com/nikku/lezer-feel/issues/59), [nikku/lezer-feel#67](https://github.com/nikku/lezer-feel/issues/67))
+* `DEPS`: update to `@lezer/lr@1.4.4`
+* `DEPS`: update to `@lezer/highlight@1.2.3`
+* `DEPS`: update to `min-dash@4.2.3`
+
+### Breaking Changes
+
+* Dropped CJS distribution. You need `Node >= 20.12.0` to import this module from CJS
 
 ## 1.9.0
 
