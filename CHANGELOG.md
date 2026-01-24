@@ -8,6 +8,13 @@ All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-fe
 
 ___Note:__ Yet to be released changes appear here._
 
+## 2.2.0
+
+_Incorporate changes from `lezer-feel@2.2.0`._
+
+* `DEPS`: update to `@lezer/lr@1.4.7`
+* `DEPS`: update to `min-dash@5.0.0`
+
 ## 2.0.0
 
 _Incorporate changes from `lezer-feel@2.1.0`._
