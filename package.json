@@ -1,6 +1,6 @@
 {
   "name": "@bpmn-io/lezer-feel",
-  "version": "2.1.0",
+  "version": "2.2.1",
   "description": "Lezer-based FEEL grammar",
   "type": "module",
   "source": "./src/index.js",
