@@ -8,6 +8,12 @@ All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-fe
 
 ___Note:__ Yet to be released changes appear here._
 
+## 2.2.1
+
+_Incorporate changes from `lezer-feel@2.2.1`._
+
+* `FIX`: correctly compute `atomicValue` for falsy values ([nikku/lezer-feel#78](https://github.com/nikku/lezer-feel/pull/78))
+
 ## 2.1.0
 
 _Incorporate changes from `lezer-feel@2.2.0`._
