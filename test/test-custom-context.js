@@ -237,6 +237,30 @@ describe('custom context', function() {
     });
 
 
+    it('atomic value (string with escaped quotes)', function() {
+
+      // when
+      const shape = computedValue(`
+        "\\"YES\\"\\"\\""
+      `);
+
+      // then
+      expect(shape).to.eql('"YES"""');
+    });
+
+
+    it('atomic value (string with escaped backslash)', function() {
+
+      // when
+      const shape = computedValue(`
+        "hello\\\\world"
+      `);
+
+      // then
+      expect(shape).to.eql('hello\\world');
+    });
+
+
     it('atomic value (boolean)', function() {
 
       // then
