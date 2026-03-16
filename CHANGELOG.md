@@ -8,6 +8,12 @@ All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-fe
 
 ___Note:__ Yet to be released changes appear here._
 
+## 2.3.1
+
+_Incorporate changes from `lezer-feel@2.3.1`._
+
+* `FIX`: unescape escape sequences in FEEL string literals ([#81](https://github.com/nikku/lezer-feel/pull/81))
+
 ## 2.3.0
 
 _Incorporate changes from `lezer-feel@2.3.0`._
