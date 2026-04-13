@@ -8,6 +8,12 @@ All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-fe
 
 ___Note:__ Yet to be released changes appear here._
 
+## 2.3.2
+
+_Incorporate changes from `lezer-feel@2.3.2`._
+
+* `FIX`: correct backslash handling in string and identifier tokens ([#83](https://github.com/nikku/lezer-feel/pull/83))
+
 ## 2.3.1
 
 _Incorporate changes from `lezer-feel@2.3.1`._
