@@ -8,6 +8,11 @@ All notable changes to [@bpmn-io/lezer-feel](https://github.com/bpmn-io/lezer-fe
 
 ___Note:__ Yet to be released changes appear here._
 
+## 2.4.0
+
+* `FEAT`: correctly handle function definition shapes ([#71](https://github.com/nikku/lezer-feel/issues/71), [#72](https://github.com/nikku/lezer-feel/pull/72), [#84](https://github.com/nikku/lezer-feel/pull/84))
+* `FIX`: do not leak function arguments as computed values ([#84](https://github.com/nikku/lezer-feel/pull/84))
+
 ## 2.3.2
 
 _Incorporate changes from `lezer-feel@2.3.2`._
