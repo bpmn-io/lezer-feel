@@ -664,11 +664,40 @@ export class VariableContext {
    */
   static of(...contexts) {
 
+    // Fast path: single VariableContext passed — return it directly
+    // to preserve subclass type (e.g. UnionContext, EntriesContext).
+    if (contexts.length === 1 && contexts[0] instanceof VariableContext) {
+      return contexts[0];
+    }
+
     const merged = contexts.reduce((context, otherContext) => {
       return this.__merge(context, otherContext);
     }, {});
 
     return new this(merged);
+  }
+
+  /**
+   * Creates a UnionContext from multiple contexts, preserving their
+   * individual shapes instead of merging them.
+   *
+   * Unlike `of()`, variants are kept distinct and accessible individually.
+   *
+   * @param { ...(VariableContext | any) } contexts
+   * @returns { UnionContext | VariableContext }
+   */
+  static union(...contexts) {
+    const nonEmpty = contexts.filter(c => !isNil(c));
+
+    if (nonEmpty.length === 0) {
+      return new this({});
+    }
+
+    const variants = nonEmpty.map(c =>
+      c instanceof VariableContext ? c : new this(this.__unwrap(c))
+    );
+
+    return new UnionContext(variants);
   }
 
   /**
@@ -681,6 +710,15 @@ export class VariableContext {
   static __unwrap(context) {
     if (!context) {
       return {};
+    }
+
+    // Handle UnionContext: flatten all variant values into a single merged
+    // object so that merge operations (e.g. filterExpressionStart scope
+    // extension) can access keys from all variants.
+    if (context instanceof UnionContext) {
+      return context.variants.reduce((acc, variant) => {
+        return this.__merge(acc, this.__unwrap(variant));
+      }, {});
     }
 
     if (context instanceof this) {
@@ -728,6 +766,91 @@ export class VariableContext {
     return merged;
   }
 
+}
+
+/**
+ * A context that holds multiple alternative shape variants,
+ * preserving distinct shapes instead of merging them.
+ *
+ * Created by `VariableContext.union()` for IfExpression branches
+ * and List elements.
+ */
+export class UnionContext extends VariableContext {
+
+  /**
+   * @param { VariableContext[] } variants
+   */
+  constructor(variants) {
+    super({});
+    this.variants = variants;
+  }
+
+  /**
+   * Return all keys available across all variants.
+   *
+   * @returns {string[]}
+   */
+  getKeys() {
+    const allKeys = new Set();
+    for (const variant of this.variants) {
+      for (const key of variant.getKeys()) {
+        allKeys.add(key);
+      }
+    }
+    return [ ...allKeys ];
+  }
+
+  /**
+   * Return value for the given key, searching across all variants.
+   * If multiple variants have the key, returns a new UnionContext of those values.
+   *
+   * @param {string} key
+   * @returns {VariableContext|ValueProducer|null}
+   */
+  get(key) {
+    const results = [];
+    for (const variant of this.variants) {
+      const val = variant.get(key);
+      if (!isNil(val)) {
+        results.push(val);
+      }
+    }
+
+    if (results.length === 0) {
+      return null;
+    }
+
+    if (results.length === 1) {
+      return results[0];
+    }
+
+    // Multiple variants provide this key — return a union of those values
+    return new UnionContext(results.map(r =>
+      r instanceof VariableContext ? r : VariableContext.of(r)
+    ));
+  }
+
+  /**
+   * Add a key by appending a new single-entry VariableContext variant.
+   *
+   * @param {string} key
+   * @param {any} value
+   * @returns {UnionContext}
+   */
+  set(key, value) {
+    return new UnionContext([ ...this.variants, new VariableContext({ [key]: value }) ]);
+  }
+
+  /**
+   * Merge another context into the union by appending it as a new variant.
+   *
+   * @param {ContextValue} other
+   * @returns {UnionContext}
+   */
+  merge(other) {
+    const otherCtx = other instanceof VariableContext ? other : VariableContext.of(other);
+    return new UnionContext([ ...this.variants, otherCtx ]);
+  }
 }
 
 class Variables {
@@ -1131,7 +1254,7 @@ export function trackVariables(context = {}, Context = VariableContext) {
         const [ thenPart, elsePart ] = variables.children.slice(-2);
 
         variables = variables.assign({
-          value: Context.of(
+          value: Context.union(
             thenPart?.computedValue(),
             elsePart?.computedValue()
           )
@@ -1140,7 +1263,7 @@ export function trackVariables(context = {}, Context = VariableContext) {
 
       if (term === List) {
         variables = variables.assign({
-          value: Context.of(
+          value: Context.union(
             ...variables.children.map(
               c => c?.computedValue()
             )
@@ -1199,10 +1322,18 @@ export function trackVariables(context = {}, Context = VariableContext) {
         }
 
         if (term === filterExpressionStart) {
+          const listValue = lastChild?.computedValue();
+
+          // If the list value is a UnionContext, merge all variant keys into a
+          // flat context so the filter predicate can reference them.
+          const flatListValue = listValue instanceof UnionContext
+            ? Context.of(...listValue.variants)
+            : listValue;
+
           newContext = Context.of(
             currentContext,
-            lastChild?.computedValue()
-          ).set('item', lastChild?.computedValue());
+            flatListValue
+          ).set('item', listValue);
         }
 
         return variables

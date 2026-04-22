@@ -382,25 +382,162 @@ describe('custom context', function() {
       `);
 
       // then
+      // null is filtered (isNil), so 3 non-null variants remain
+      expect(shape).to.eql({
+        value: {},
+        variants: [
+          {
+            value: { atomicValue: 1, entries: {} }
+          },
+          {
+            value: {
+              atomicValue: undefined,
+              entries: {
+                'a +': {
+                  value: { atomicValue: 1, entries: {} }
+                }
+              }
+            }
+          },
+          {
+            value: {
+              atomicValue: undefined,
+              entries: {
+                'b +': {
+                  value: { atomicValue: 2, entries: {} }
+                }
+              }
+            }
+          }
+        ]
+      });
+    });
+
+
+    it('list (preserves distinct atomic shapes)', function() {
+
+      // when
+      const shape = computedValue(`
+        [ 1, true ]
+      `);
+
+      // then
+      // distinct shapes are preserved as variants, not merged
+      expect(shape).to.eql({
+        value: {},
+        variants: [
+          {
+            value: { atomicValue: 1, entries: {} }
+          },
+          {
+            value: { atomicValue: true, entries: {} }
+          }
+        ]
+      });
+    });
+
+
+    it('if expression (preserves branch shapes)', function() {
+
+      // when
+      const shape = computedValue(`
+        if true then { a: 1 } else { b: 2 }
+      `);
+
+      // then
+      // then/else branches are kept as distinct variants
+      expect(shape).to.eql({
+        value: {},
+        variants: [
+          {
+            value: {
+              atomicValue: undefined,
+              entries: {
+                a: { value: { atomicValue: 1, entries: {} } }
+              }
+            }
+          },
+          {
+            value: {
+              atomicValue: undefined,
+              entries: {
+                b: { value: { atomicValue: 2, entries: {} } }
+              }
+            }
+          }
+        ]
+      });
+    });
+
+
+    it('path extracted from branch of union type', function() {
+
+      // when
+      const shape = computedValue(`
+        [ { a: { c: 1 } }, { b: 2 } ].a
+      `);
+
+      // then
+      // both keys are accessible via getKeys()
       expect(shape).to.eql({
         value: {
           atomicValue: undefined,
           entries: {
-            'a +': {
+            c: {
               value: {
                 atomicValue: 1,
-                entries: {}
-              }
-            },
-            'b +': {
-              value: {
-                atomicValue: 2,
                 entries: {}
               }
             }
           }
         }
       });
+    });
+
+
+    it('path extracted from all branches of union type', function() {
+
+      // when
+      const shape = computedValue(`
+        [ { a: { c: 1 } }, { a: { b: 2 } } ].a
+      `);
+
+      // then
+      // both keys are accessible via getKeys()
+      expect(shape).to.eql({
+        value: {},
+        variants: [
+          {
+            value: {
+              atomicValue: undefined,
+              entries: {
+                c: { value: { atomicValue: 1, entries: {} } }
+              }
+            }
+          },
+          {
+            value: {
+              atomicValue: undefined,
+              entries: {
+                b: { value: { atomicValue: 2, entries: {} } }
+              }
+            }
+          }
+        ]
+      });
+    });
+
+
+    it('list (keys accessible across all variants)', function() {
+
+      // when
+      const shape = computedValue(`
+        [ { a: 1 }, { b: 2 } ]
+      `);
+
+      // then
+      // both keys are accessible via getKeys()
+      expect(shape.getKeys()).to.include.members([ 'a', 'b' ]);
     });
 
 
