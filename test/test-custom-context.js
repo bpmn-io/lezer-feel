@@ -91,7 +91,7 @@ describe('custom context', function() {
   });
 
 
-  it('should merge contexts', function() {
+  it('should create union from contexts', function() {
 
     // when
     const context = EntriesContext.of(
@@ -111,16 +111,16 @@ describe('custom context', function() {
       )
     );
 
-    // then
+    // then - keys from both variants are accessible through 'a'
     expect(
-      context.value.entries.a.value.entries
-    ).to.have.keys([
+      context.get('a').getKeys()
+    ).to.include.members([
       'ab', 'ac'
     ]);
   });
 
 
-  it('should merge, unwraping nested contexts', function() {
+  it('should create union, unwrapping nested contexts', function() {
 
     const context = EntriesContext.of(
       EntriesContext.of({
@@ -145,10 +145,10 @@ describe('custom context', function() {
       })
     );
 
-    // then
+    // then - keys from both variants are accessible through 'a'
     expect(
-      context.value.entries.a.value.entries
-    ).to.have.keys([
+      context.get('a').getKeys()
+    ).to.include.members([
       'ab', 'ac'
     ]);
   });
@@ -173,12 +173,8 @@ describe('custom context', function() {
     // when
     const context = EntriesContext.of({}, {});
 
-    // then
-    expect(context).to.eql({
-      value: {
-        entries: { }
-      }
-    });
+    // then - union of two empty contexts has no keys
+    expect(context.getKeys()).to.be.empty;
   });
 
 
