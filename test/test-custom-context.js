@@ -111,12 +111,38 @@ describe('custom context', function() {
       )
     );
 
-    // then - keys from both variants are accessible through 'a'
-    expect(
-      context.get('a').getKeys()
-    ).to.include.members([
-      'ab', 'ac'
-    ]);
+    // then
+    expect(context).to.eql({
+      value: {},
+      variants: [
+        {
+          value: {
+            entries: {
+              a: {
+                value: {
+                  entries: {
+                    ab: { value: { atomicValue: 10, entries: {} } }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          value: {
+            entries: {
+              a: {
+                value: {
+                  entries: {
+                    ac: { value: { atomicValue: 20, entries: {} } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    });
   });
 
 
@@ -145,12 +171,38 @@ describe('custom context', function() {
       })
     );
 
-    // then - keys from both variants are accessible through 'a'
-    expect(
-      context.get('a').getKeys()
-    ).to.include.members([
-      'ab', 'ac'
-    ]);
+    // then
+    expect(context).to.eql({
+      value: {},
+      variants: [
+        {
+          value: {
+            entries: {
+              a: {
+                value: {
+                  entries: {
+                    ab: { value: { atomicValue: 10, entries: {} } }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          value: {
+            entries: {
+              a: {
+                value: {
+                  entries: {
+                    ac: { value: { atomicValue: 20, entries: {} } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    });
   });
 
 
@@ -173,8 +225,14 @@ describe('custom context', function() {
     // when
     const context = EntriesContext.of({}, {});
 
-    // then - union of two empty contexts has no keys
-    expect(context.getKeys()).to.be.empty;
+    // then
+    expect(context).to.eql({
+      value: {},
+      variants: [
+        { value: { entries: {} } },
+        { value: { entries: {} } }
+      ]
+    });
   });
 
 
