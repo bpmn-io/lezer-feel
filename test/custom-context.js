@@ -64,9 +64,7 @@ class UnionContext extends VariableContext {
     }
 
     // Multiple variants provide this key — return a union of those values
-    return new UnionContext(results.map(r =>
-      r instanceof VariableContext ? r : new EntriesContext(EntriesContext.__unwrap(r))
-    ));
+    return new UnionContext(results.map(r => EntriesContext.toVariant(r)));
   }
 
   /**
@@ -77,7 +75,7 @@ class UnionContext extends VariableContext {
    * @returns {UnionContext}
    */
   set(key, value) {
-    return new UnionContext([ ...this.variants, new VariableContext({ [key]: value }) ]);
+    return new UnionContext([ ...this.variants, EntriesContext.of({ entries: { [key]: value } }) ]);
   }
 }
 
@@ -179,11 +177,7 @@ export class EntriesContext extends VariableContext {
     if (nonEmpty.length > 1) {
 
       // Multiple non-nil values: create a union context preserving each variant's shape
-      const variants = nonEmpty.map(c =>
-        c instanceof VariableContext ? c : new this(this.__unwrap(c))
-      );
-
-      return new UnionContext(variants);
+      return new UnionContext(nonEmpty.map(c => this.toVariant(c)));
     }
 
     // Zero or one non-nil value: use original merge-based behavior
@@ -200,6 +194,17 @@ export class EntriesContext extends VariableContext {
     }, {});
 
     return new this(merged);
+  }
+
+  /**
+   * Normalize a value to a VariableContext variant.
+   * VariableContext subclasses are returned as-is; plain values are wrapped.
+   *
+   * @param {VariableContext | any} value
+   * @returns {VariableContext}
+   */
+  static toVariant(value) {
+    return value instanceof VariableContext ? value : new this(this.__unwrap(value));
   }
 
   /**
