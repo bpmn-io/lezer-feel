@@ -1,5 +1,5 @@
 import { highlightTree, tagHighlighter, tags as t } from '@lezer/highlight';
-import { parser } from 'lezer-feel';
+import { parser } from '@bpmn-io/lezer-feel';
 import { expect } from 'chai';
 
 const highlighter = tagHighlighter([
